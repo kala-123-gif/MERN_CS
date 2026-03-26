@@ -6,10 +6,13 @@ require('dotenv').config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+const authRoutes = require('./auth');
+app.use('/api/auth', authRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected!'))
   .catch(err => console.log('❌ MongoDB Error:', err));
+
 
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Person 1 Backend ✅ Windows Fixed!' });
