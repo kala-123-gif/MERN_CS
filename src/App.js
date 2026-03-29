@@ -1,3 +1,4 @@
+import coursesData from "./data/courses";
 import React, { useState, useEffect } from 'react';
 
 /**
@@ -31,7 +32,7 @@ const App = () => {
     { id: 6, title: 'Music Basics', emoji: '🎵', bg: '#F3E5F5', diff: 'Beginner', lessons: 8, dur: '3 weeks', progress: 0, teacher: 'Mr. Vikram Joshi', desc: 'Learn rhythm and notes!', videoUrl: 'https://www.youtube.com/embed/0SInS-7Lp8w' },
   ];
 
-  const [courses, setCourses] = useState(COURSES_DATA);
+  const [courses, setCourses] = useState(coursesData);
 
   // --- UTILS ---
   const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
