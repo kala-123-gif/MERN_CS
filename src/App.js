@@ -1,9 +1,4 @@
-<<<<<<< HEAD
 import { useState, useEffect, useCallback } from "react";
-=======
-import coursesData from "./data/courses";
-import React, { useState, useEffect } from 'react';
->>>>>>> 4dbf7502d02003ff75d5dab0750b7c6cd15ca4d4
 
 // ─── CSS ───────────────────────────────────────────────────────────────────
 const css = `
@@ -489,7 +484,6 @@ function KidDashboard({ user, onLogout, showToast, showModal }) {
     { id: 'messages', icon: '💬', label: 'Messages', badge: 2 },
   ];
 
-<<<<<<< HEAD
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <aside className="sidebar">
@@ -508,9 +502,6 @@ function KidDashboard({ user, onLogout, showToast, showModal }) {
         <div className="sb-bottom"><button className="logout-btn" onClick={() => showModal('🚪 Log Out','Are you sure you want to log out?','Yes, Log Out', onLogout)}>🚪 Log Out</button></div>
       </aside>
       <main className="main">
-=======
-  const [courses, setCourses] = useState(coursesData);
->>>>>>> 4dbf7502d02003ff75d5dab0750b7c6cd15ca4d4
 
         {/* DASHBOARD */}
         {tab === 'dashboard' && (
