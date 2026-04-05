@@ -353,7 +353,7 @@ function Calendar({ showToast }) {
 function CourseCard({ course, onOpen, onEnroll }) {
   const diffColor = course.diff === 'Beginner' ? '#2E7D32' : course.diff === 'Intermediate' ? '#7B1FA2' : '#B71C1C';
   return (
-    <div className="ccard" onClick={() => onOpen(course.id)}>
+    <div className="ccard" onClick={() => onOpen(course._id)}>
       <div className="cthumb" style={{ background: course.bg }}>
         <span>{course.emoji}</span>
         <span className="cdiff" style={{ background: diffColor }}>{course.diff}</span>
@@ -368,7 +368,7 @@ function CourseCard({ course, onOpen, onEnroll }) {
             <div className="pb"><div className="pf pf-a" style={{ width: `${course.progress}%` }}></div></div>
           </>
         ) : (
-          <button className="start-btn" onClick={e => { e.stopPropagation(); onEnroll(course.id); }}>🚀 Start Course</button>
+          <button className="start-btn" onClick={e => { e.stopPropagation(); onEnroll(course._id); }}>🚀 Start Course</button>
         )}
       </div>
     </div>
@@ -378,7 +378,7 @@ function CourseCard({ course, onOpen, onEnroll }) {
 // ─── COURSE DETAIL PAGE ──────────────────────────────────────────────────────
 function CourseDetail({ courseId, courses, onBack, showToast, showModal }) {
   const [activeChapter, setActiveChapter] = useState(0);
-  const c = courses.find(x => x.id === courseId);
+  const c = courses.find(x => x._id === courseId);
   if (!c) return null;
   const chs = ['Introduction','Chapter 1: Basics','Chapter 2: Practice','Chapter 3: Advanced','📝 Quiz','Final Review'];
   return (
@@ -454,7 +454,7 @@ function KidDashboard({ user, onLogout, showToast, showModal }) {
   const [tab, setTab] = useState('dashboard');
   const [courseFilter, setCourseFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [courses, setCourses] = useState(COURSES_DATA);
+  const [courses, setCourses] = useState([]);
   const [detailId, setDetailId] = useState(null);
   const name = cap(user?.name || 'Friend');
 
@@ -464,15 +464,70 @@ function KidDashboard({ user, onLogout, showToast, showModal }) {
     return ms && mt;
   });
 
+  useEffect(() => {
+    const token = localStorage.getItem('ls_token');
+
+    fetch('http://localhost:5000/api/courses', {
+      headers: {
+        'x-auth-token': token
+      }
+    })
+      .then(res => res.json())
+      .then(async (coursesData) => {
+        const progressRes = await fetch('http://localhost:5000/api/progress/me', {
+          headers: {
+            'x-auth-token': token
+          }
+        });
+
+        const progress = await progressRes.json();
+
+        const merged = coursesData.map(course => {
+          const p = progress.find(
+            x => x.course._id === course._id
+          );
+
+          return {
+            ...course,
+            progress: p ? p.progress : 0
+          };
+        });
+
+        setCourses(merged);
+      })
+      .catch(err => console.log(err));
+  }, []);
+
   const openCourse = (id) => setDetailId(id);
-  const enrollCourse = (id) => {
-    const c = courses.find(x => x.id === id);
-    showModal('🚀 Enroll in ' + c.title, `Teacher: ${c.teacher}\nLessons: ${c.lessons}\nDuration: ${c.dur}\n\nReady to start?`, 'Enroll Now!', () => {
-      setCourses(prev => prev.map(x => x.id === id ? { ...x, progress: 5 } : x));
-      showToast('🎉 Enrolled in ' + c.title + '!');
+  const enrollCourse = async (id) => {
+    const token = localStorage.getItem('ls_token');
+
+    await fetch(`http://localhost:5000/api/courses/${id}/enroll`, {
+      method: 'POST',
+      headers: {
+        'x-auth-token': token
+      }
     });
+
+    setCourses(prev =>
+      prev.map(c => c._id === id ? { ...c, progress: 5 } : c)
+    );
   };
 
+  const [progressData, setProgressData] = useState([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('ls_token');
+
+    fetch('http://localhost:5000/api/progress/me', {
+      headers: {
+        'x-auth-token': token
+      }
+    })
+      .then(res => res.json())
+      .then(data => setProgressData(data))
+      .catch(err => console.log(err));
+  }, []);
   if (detailId) return <CourseDetail courseId={detailId} courses={courses} onBack={() => setDetailId(null)} showToast={showToast} showModal={showModal} />;
 
   const navItems = [
@@ -627,7 +682,7 @@ function KidDashboard({ user, onLogout, showToast, showModal }) {
             </div>
             <div className="g3">
               {filteredCourses.length ? filteredCourses.map(c => (
-                <CourseCard key={c.id} course={c} onOpen={openCourse} onEnroll={enrollCourse} />
+                <CourseCard key={c._id} course={c} onOpen={openCourse} onEnroll={enrollCourse} />
               )) : <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', color: 'var(--txl)' }}>No courses found 🔍</div>}
             </div>
           </div>
@@ -758,12 +813,36 @@ function KidDashboard({ user, onLogout, showToast, showModal }) {
 // ─── PARENT DASHBOARD ────────────────────────────────────────────────────────
 function ParentDashboard({ user, onLogout, showToast, showModal }) {
   const [tab, setTab] = useState('dashboard');
-  const [courses] = useState(COURSES_DATA);
+  const [courses, setCourses] = useState([]);
   const [detailId, setDetailId] = useState(null);
+  const [children, setChildren] = useState([]);
   const name = cap(user?.name || 'Parent');
 
   if (detailId) return <CourseDetail courseId={detailId} courses={courses} onBack={() => setDetailId(null)} showToast={showToast} showModal={showModal} />;
+  useEffect(() => {
+    const token = localStorage.getItem('ls_token');
 
+    fetch('http://localhost:5000/api/courses', {
+      headers: {
+        'x-auth-token': token
+      }
+    })
+      .then(res => res.json())
+      .then(data => setCourses(data))
+      .catch(err => console.log(err));
+  }, []);
+  useEffect(() => {
+    const token = localStorage.getItem('ls_token');
+
+    fetch('http://localhost:5000/api/users/children', {
+      headers: {
+        'x-auth-token': token
+      }
+    })
+      .then(res => res.json())
+      .then(data => setChildren(data))
+      .catch(err => console.log(err));
+  }, []);
   const navItems = [
     { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
     { id: 'children', icon: '👧', label: 'My Children' },
@@ -914,7 +993,7 @@ function ParentDashboard({ user, onLogout, showToast, showModal }) {
           <div>
             <div className="topbar"><h1>📚 Browse <span>Courses</span></h1></div>
             <div className="g3">
-              {courses.map(c => <CourseCard key={c.id} course={c} onOpen={id => setDetailId(id)} onEnroll={() => showToast('🎉 Enrolled!')} />)}
+              {courses.map(c => <CourseCard key={c._id} course={c} onOpen={id => setDetailId(id)} onEnroll={() => showToast('🎉 Enrolled!')} />)}
             </div>
           </div>
         )}
