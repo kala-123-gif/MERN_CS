@@ -6,14 +6,29 @@ require('dotenv').config();
 const app = express();
 app.use(cors());
 app.use(express.json());
-const authRoutes = require('./auth');
+
+// ROUTES
+const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
+const courseRoutes = require('./routes/courseRoutes');
+app.use('/api/courses', courseRoutes);
+
+const progressRoutes = require("./routes/progressRoutes");
+app.use("/api/progress", progressRoutes);
+
+const userRoutes = require('./routes/userRoutes');
+app.use("/api/users", userRoutes);
+
+const messageRoutes = require("./routes/messageRoutes");
+app.use("/api/messages", messageRoutes);
+
+// DB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected!'))
   .catch(err => console.log('❌ MongoDB Error:', err));
 
-
+// TEST
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Person 1 Backend ✅ Windows Fixed!' });
 });
